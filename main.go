@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+
 	"github.com/gorilla/mux"
 )
 
@@ -26,19 +28,34 @@ func Home(w http.ResponseWriter, r *http.Request) {
 
 // Signup Page
 func Signup(w http.ResponseWriter, r *http.Request) {
-	var tmpls = template.Must(template.ParseFiles("templates/signup.html"))
-	data := struct {
-		Title  string
-		Header string
-	}{
-		Title:  "Index Page",
-		Header: "Hello, World!",
+
+	fmt.Println("method:", r.Method) //get request method
+	if r.Method == "GET" {
+		t, _ := template.ParseFiles("templates/signup.html")
+		t.Execute(w, nil)
+	} else {
+		r.ParseForm()
+		// logic part of log in
+		fmt.Println("Name:", r.Form["name"])
+		fmt.Println("Phone:", r.Form["phone"])
+		fmt.Println("Email:", r.Form["email"])
+		fmt.Println("Batch:", r.Form["batch"])
+		fmt.Println("Password:", r.Form["password"])
 	}
 
-	if err := tmpls.ExecuteTemplate(w, "signup.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// var tmpls = template.Must(template.ParseFiles("templates/signup.html"))
+	// data := struct {
+	// 	Title  string
+	// 	Header string
+	// }{
+	// 	Title:  "Index Page",
+	// 	Header: "Hello, World!",
+	// }
+
+	// if err := tmpls.ExecuteTemplate(w, "signup.html", data); err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 }
 
 // Login Page
@@ -85,5 +102,5 @@ func main() {
 		http.FileServer(http.Dir("templates/"))))
 
 	http.Handle("/", r)
-	log.Fatalln(http.ListenAndServe(":9000", nil))
+	log.Fatalln(http.ListenAndServe(":8080", nil))
 }

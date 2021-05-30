@@ -1,0 +1,27 @@
+Alumni Showcase JNV Bharatpur
+
+----- Alumni details : --------- 
+- Name 
+- Address
+- Email Id
+- Phone Number
+- Achievements
+- Batch
+- Photo
+- Words of wisdom
+- Words about memories in navodaya
+- Success Mantra
+- Chat Forum
+
+----------- Signup ---------
+- Name
+- Mobile number
+- Batch
+- Email
+- Password
+- Confirm password
+- Verification is required to continue.
+
+------------ Login --------
+- Email | phone
+- Password

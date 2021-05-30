@@ -1,0 +1,15 @@
+#### Table Name : alumni #############
+--------- Column Names: --------------
+- Id
+- Name
+- Email
+- Phone
+- Batch
+- Success_Mantra
+- Achievements
+- Memories
+- Password
+- Is_verified
+
+
+
