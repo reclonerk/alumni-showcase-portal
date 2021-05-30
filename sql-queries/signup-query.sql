@@ -1,6 +1,6 @@
 INSERT INTO alumni
 (Name, Phone, Email, Batch, Password, Is_verified)
-VALUES (name, email, batch, password, 0);
+VALUES (name, phone, email, batch, password, 0);
 
 INSERT INTO alumni
 (Name, Phone, Email, Batch, Password, Is_verified) VALUES

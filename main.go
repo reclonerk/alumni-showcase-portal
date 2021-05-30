@@ -1,28 +1,58 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 
+	// "strconv"
+
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
-// Index Page
-func Home(w http.ResponseWriter, r *http.Request) {
-	var tmpls = template.Must(template.ParseFiles("templates/home.html"))
-	data := struct {
-		Title  string
-		Header string
-	}{
-		Title:  "Index Page",
-		Header: "Hello, World!",
-	}
+const (
+	CONN_HOST        = "localhost"
+	CONN_PORT        = "8080"
+	DRIVER_NAME      = "mysql"
+	DATA_SOURCE_NAME = "root:@/mydb"
+)
 
-	if err := tmpls.ExecuteTemplate(w, "home.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+var db *sql.DB
+var ctx context.Context
+var err error
+
+var connectionError error
+
+func init() {
+	db, connectionError = sql.Open(DRIVER_NAME, DATA_SOURCE_NAME)
+	if connectionError != nil {
+		log.Fatal("error connecting to database : ", connectionError)
+	}
+}
+
+func getCurrentDb(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT DATABASE() as db")
+	if err != nil {
+		log.Print("error executing query :: ", err)
 		return
+	}
+	var db string
+	for rows.Next() {
+		rows.Scan(&db)
+	}
+	fmt.Fprintf(w, "Current Database is :: %s", db)
+}
+
+
+func Home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("method:", r.Method) //get request method
+	if r.Method == "GET" {
+		t, _ := template.ParseFiles("templates/home.html")
+		t.Execute(w, nil)
 	}
 }
 
@@ -41,54 +71,45 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Email:", r.Form["email"])
 		fmt.Println("Batch:", r.Form["batch"])
 		fmt.Println("Password:", r.Form["password"])
+
+		name := r.FormValue("name")
+		phone := r.FormValue("phone")
+		email := r.FormValue("email")
+		batch := r.FormValue("batch")
+		password := r.FormValue("password")
+
+		_, err = db.Exec("INSERT INTO alumni (Name, Phone, Email, Batch, Password, Is_verified) VALUES (?, ?, ?, ?, ?, ?)", name, phone, email, batch, password, "0")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Server error, unable to create your account.", 500)
+			return
+		}
+		fmt.Println("User created successfully")
+		
 	}
-
-	// var tmpls = template.Must(template.ParseFiles("templates/signup.html"))
-	// data := struct {
-	// 	Title  string
-	// 	Header string
-	// }{
-	// 	Title:  "Index Page",
-	// 	Header: "Hello, World!",
-	// }
-
-	// if err := tmpls.ExecuteTemplate(w, "signup.html", data); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
 }
 
 // Login Page
 func Login(w http.ResponseWriter, r *http.Request) {
-	var tmpls = template.Must(template.ParseFiles("templates/login.html"))
-	data := struct {
-		Title  string
-		Header string
-	}{
-		Title:  "Index Page",
-		Header: "Hello, World!",
-	}
-
-	if err := tmpls.ExecuteTemplate(w, "login.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	fmt.Println("method:", r.Method) //get request method
+	if r.Method == "GET" {
+		t, _ := template.ParseFiles("templates/login.html")
+		t.Execute(w, nil)
+	} else {
+		r.ParseForm()
+		// logic part of log in
+		fmt.Println("Email:", r.Form["email"])
+		fmt.Println("Password:", r.Form["password"])
+		// getCurrentDb()
 	}
 }
 
 // Alums Page
 func Alums(w http.ResponseWriter, r *http.Request) {
-	var tmpls = template.Must(template.ParseFiles("templates/alums.html"))
-	data := struct {
-		Title  string
-		Header string
-	}{
-		Title:  "Index Page",
-		Header: "Hello, World!",
-	}
-
-	if err := tmpls.ExecuteTemplate(w, "alums.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	fmt.Println("method:", r.Method) //get request method
+	if r.Method == "GET" {
+		t, _ := template.ParseFiles("templates/alums.html")
+		t.Execute(w, nil)
 	}
 }
 
@@ -98,9 +119,16 @@ func main() {
 	r.HandleFunc("/signup", Signup)
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/alums", Alums)
-	r.PathPrefix("/").Handler(http.StripPrefix("/",
-		http.FileServer(http.Dir("templates/"))))
+	// r.PathPrefix("/").Handler(http.StripPrefix("/",
+	// 	http.FileServer(http.Dir("templates/"))))
 
 	http.Handle("/", r)
-	log.Fatalln(http.ListenAndServe(":8080", nil))
+	// http.ListenAndServe(":8080", nil)
+	// r.HandleFunc("/signup/create", createRecord).Methods("POST")
+	defer db.Close()
+	err := http.ListenAndServe(CONN_HOST+ ":" + CONN_PORT, nil)
+	if err != nil {
+		log.Fatal("error starting http server : ", r)
+		return
+	}
 }
