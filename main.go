@@ -65,13 +65,6 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		t.Execute(w, nil)
 	} else {
 		r.ParseForm()
-		// logic part of log in
-		fmt.Println("Name:", r.Form["name"])
-		fmt.Println("Phone:", r.Form["phone"])
-		fmt.Println("Email:", r.Form["email"])
-		fmt.Println("Batch:", r.Form["batch"])
-		fmt.Println("Password:", r.Form["password"])
-
 		name := r.FormValue("name")
 		phone := r.FormValue("phone")
 		email := r.FormValue("email")
@@ -119,14 +112,9 @@ func main() {
 	r.HandleFunc("/signup", Signup)
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/alums", Alums)
-	// r.PathPrefix("/").Handler(http.StripPrefix("/",
-	// 	http.FileServer(http.Dir("templates/"))))
-
 	http.Handle("/", r)
-	// http.ListenAndServe(":8080", nil)
-	// r.HandleFunc("/signup/create", createRecord).Methods("POST")
 	defer db.Close()
-	err := http.ListenAndServe(CONN_HOST+ ":" + CONN_PORT, nil)
+	err := http.ListenAndServe(CONN_HOST + ":" + CONN_PORT, nil)
 	if err != nil {
 		log.Fatal("error starting http server : ", r)
 		return
