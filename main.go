@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-
 	// "encoding/json"
 	"fmt"
 	"html/template"
@@ -110,8 +108,8 @@ type Alumni struct {
 func Alums(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method) //get request method
 	if r.Method == "GET" {
-		// t, _ := template.ParseFiles("templates/alums.html")
-		// t.Execute(w, nil)
+		t, _ := template.ParseFiles("templates/alums.html")
+		t.Execute(w, nil)
 
 		log.Print("reading records from database")
 		rows, err := db.Query("SELECT Id, Name, Email, Phone, Batch fROM alumni;")
@@ -120,6 +118,7 @@ func Alums(w http.ResponseWriter, r *http.Request) {
 			log.Print("error executing select query :: ", err)
 			return
 		}
+
 		alumnees := []Alumni{}
 		for rows.Next() {
 			var Id int
@@ -133,16 +132,28 @@ func Alums(w http.ResponseWriter, r *http.Request) {
 			alumnees = append(alumnees, alumni)
 		}
 
-		json.NewEncoder(w).Encode(alumnees)
+		// json.NewEncoder(w).Encode(alumnees)
 
-		// for i := range alumnees {
-		// 	emp := alumnees[i]
-		// 	fmt.Fprintf(w, "Id :%d \n Name : %s\n Email: %s \n Phone: %s \n Batch : %s\n", emp.Id, emp.Name, emp.Email, emp.Phone, emp.Batch)
-		// 	fmt.Fprintln(w)
-		// }
+		for i := range alumnees {
+			emp := alumnees[i]
+			myvar := map[string]interface{}{"Name": emp.Name, "Batch" : emp.Batch, "Phone" : emp.Phone, "Email" : emp.Email}
+			t, _ := template.ParseFiles("templates/card.html")
+			fmt.Println(emp)
+			// t.Execute(w, myvar)
+			if err := t.Execute(w, myvar); err != nil {
+        			http.Error(w, err.Error(), 500)
+        			return
+    			}
+			// fmt.Fprintf(w, "Id :%d \n Name : %s\n Email: %s \n Phone: %s \n Batch : %s\n", emp.Id, emp.Name, emp.Email, emp.Phone, emp.Batch)
+			// fmt.Fprintln(w)
+		}
+		
+		
 
 		// fmt.Println(alumnees)
 	}
+	t, _ := template.ParseFiles("templates/procedure-add.html")
+		t.Execute(w, nil)
 }
 
 func main() {
@@ -152,6 +163,9 @@ func main() {
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/alums", Alums)
 	http.Handle("/", r)
+	r.PathPrefix("/").Handler(http.StripPrefix("/",
+		http.FileServer(http.Dir("templates/"))))
+
 	defer db.Close()
 	err := http.ListenAndServe(CONN_HOST+":"+CONN_PORT, nil)
 	if err != nil {
