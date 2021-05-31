@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+
+	// "encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -47,7 +50,6 @@ func getCurrentDb(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Current Database is :: %s", db)
 }
 
-
 func Home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method) //get request method
 	if r.Method == "GET" {
@@ -78,7 +80,6 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Println("User created successfully")
-		
 	}
 }
 
@@ -97,12 +98,50 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type Alumni struct {
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	Batch string `json:"batch"`
+}
+
 // Alums Page
 func Alums(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method) //get request method
 	if r.Method == "GET" {
-		t, _ := template.ParseFiles("templates/alums.html")
-		t.Execute(w, nil)
+		// t, _ := template.ParseFiles("templates/alums.html")
+		// t.Execute(w, nil)
+
+		log.Print("reading records from database")
+		rows, err := db.Query("SELECT Id, Name, Email, Phone, Batch fROM alumni;")
+		// fmt.Println(rows)
+		if err != nil {
+			log.Print("error executing select query :: ", err)
+			return
+		}
+		alumnees := []Alumni{}
+		for rows.Next() {
+			var Id int
+			var Name string
+			var Email string
+			var Phone string
+			var Batch string
+			err = rows.Scan(&Id, &Name, &Email, &Phone, &Batch)
+			alumni := Alumni{Id: Id, Name: Name, Email: Email, Phone: Phone, Batch: Batch}
+			// fmt.Println(alumni)
+			alumnees = append(alumnees, alumni)
+		}
+
+		json.NewEncoder(w).Encode(alumnees)
+
+		// for i := range alumnees {
+		// 	emp := alumnees[i]
+		// 	fmt.Fprintf(w, "Id :%d \n Name : %s\n Email: %s \n Phone: %s \n Batch : %s\n", emp.Id, emp.Name, emp.Email, emp.Phone, emp.Batch)
+		// 	fmt.Fprintln(w)
+		// }
+
+		// fmt.Println(alumnees)
 	}
 }
 
@@ -114,7 +153,7 @@ func main() {
 	r.HandleFunc("/alums", Alums)
 	http.Handle("/", r)
 	defer db.Close()
-	err := http.ListenAndServe(CONN_HOST + ":" + CONN_PORT, nil)
+	err := http.ListenAndServe(CONN_HOST+":"+CONN_PORT, nil)
 	if err != nil {
 		log.Fatal("error starting http server : ", r)
 		return
